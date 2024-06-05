@@ -37,7 +37,9 @@ c:\necessary_files> `hashit check backup --recursive --diff`
 **Usage:**
 : `python hashit <action> <collection>`
 
-###Actions:
+### Actions:
+
+---
 
 **store**
 : add files in current directory (and optionally subdirectories) to a collection
