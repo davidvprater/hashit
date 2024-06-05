@@ -1,12 +1,15 @@
 # hashit
 Hashing script in Python to store and check file hashes, typically for duplicate checking.
 
-It does a very simple SHA256 hash, which is less prone to collision than MD5.  I understand collisions are still possible, but they'd be very rare.
+It does a very simple SHA1 hash, which is less prone to collision than MD5.  I understand collisions are still possible, but they'd be very rare.
+
+Hashes are made on the contents of the file only.  Date, size, and filename are not taken into consideration.  Any modified files will show as not existing in the collection.  
+
+This is a script I've had around for awhile and thought I'd share it.  I do some data restoration, and I've been in tech through many generations of hard drives.  This script helps me consolidate various personal backups if needed, and allows me to ensure complete collections of files for clients.  
 
 It creates an SQLite database file per collection in your home directory under .hashes/ 
 
-**Note:** This is meant to be somewhere in your path.  I've tested in Windows where I have 
-Python files set as executable.  
+**Note:** This is meant to be somewhere in your path.  I've been using it in Windows where I have Python files set as executable.  ( like this: [StackOverflow Discussion on making Python files executable in Windows](https://stackoverflow.com/questions/11472843/set-up-python-on-windows-to-not-type-python-in-cmd) )
 
 # Typical use case:
 
