@@ -8,32 +8,35 @@ It creates an SQLite database file per collection in your home directory under .
 # Typical use case:
 
 ** Make sure you're not missing photos **
+
 c:\pictures> hashit store pictures
 e:\pictures> hashit check pictures --diff --recursive --listonly > files_not_on_c.txt
 
-** See if your new-found backup has anything new in it **
+**See if your new-found backup has anything new in it**
+
 c:\audio\my_awesome_band> hashit store bandmusic
 f:\awesome_band_backup_from_1999> hashit check bandmusic --recursive
 
-** Confirm your backup **
+**Confirm your backup**
+
 g:\backup> hashit store backup --recursive
 c:\necessary_files> hashit check backup --recursive --diff
 
 # Options
 
-**Usage:** python hashit <action> <collection>
+**Usage:** python hashit [action] [collection]
 
 **Actions:**
-store
+**store**
 : add files in current directory (and optionally subdirectories) to a collection
 
-check
+**check**
 : see if files in current directory exist in a collection
 
-list
+**list**
 : list the contents of a collection
 
-flush
+**flush**
 : clear out the contents of a collection and remove its file
 
 **optional:** 
