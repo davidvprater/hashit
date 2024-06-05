@@ -10,20 +10,27 @@ Python files set to execute.  Change the path at the top unless your name is Dav
 
 # Typical use case:
 
+Let's assume that you have python files executable in your OS and you've updated the shebang as noted above.
+
+---
+
 ### Make sure you're not missing photos
 
-c:\pictures> hashit store pictures
-e:\pictures> hashit check pictures --diff --recursive --listonly > files_not_on_c.txt
+c:\pictures> `hashit store pictures`
+
+e:\pictures> `hashit check pictures --diff --recursive --listonly > files_not_on_c.txt`
 
 ### See if your new-found backup has anything new in it
 
-c:\audio\my_awesome_band> hashit store bandmusic
-f:\awesome_band_backup_from_1999> hashit check bandmusic --recursive
+c:\audio\my_awesome_band> `hashit store bandmusic`
+
+f:\awesome_band_backup_from_1999> `hashit check bandmusic --recursive`
 
 ### Confirm your backup
 
-g:\backup> hashit store backup --recursive
-c:\necessary_files> hashit check backup --recursive --diff
+g:\backup> `hashit store backup --recursive`
+
+c:\necessary_files> `hashit check backup --recursive --diff`
 
 # Options
 
