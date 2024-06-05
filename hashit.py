@@ -1,10 +1,16 @@
-# path to python is:  C:\Users\david\miniconda\python.exe
-#!C:\users\david\miniconda\python.exe
-
 import hashlib
 import os
 import sqlite3
 import argparse
+import os
+
+python_path = os.environ.get("PYTHON_PATH")
+if python_path:
+    python_interpreter = os.path.join(python_path, "python.exe")
+else:
+    python_interpreter = "/usr/bin/python"
+
+#!$python_interpreter$
 
 options = {
     "rename" : False,
