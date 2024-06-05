@@ -14,11 +14,17 @@ Let's assume that you have python files executable in your OS.  If you don't, ad
 
 ---
 
-### Make sure you're not missing photos
+### Generate a text file of files missing from your main picture collection
 
 c:\pictures> `hashit store pictures --recursive`
 
 e:\pictures> `hashit check pictures --diff --recursive --listonly > files_not_on_c.txt`
+
+*protip* Review the text file and if you want to copy them all, you can something like this:
+
+(windows) `for /f "delims=" %i in (files_not_on_c.txt) do copy "%i" "c:\pictures\newfound"` 
+
+(linux) `cat filenames_not_in_home.txt | xargs -I {} cp "{}" ~/Pictures/newfound/`
 
 ### See if your new-found backup has anything new in it
 
