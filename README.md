@@ -6,11 +6,11 @@ It does a very simple SHA256 hash, which is less prone to collision than MD5.  I
 It creates an SQLite database file per collection in your home directory under .hashes/ 
 
 **Note:** This is meant to be somewhere in your path.  I've tested in Windows where I have 
-Python files set to execute.  Change the path at the top unless your name is David and you are in Windows and are partial to miniconda.  
+Python files set as executable.  
 
 # Typical use case:
 
-Let's assume that you have python files executable in your OS and you've updated the shebang as noted above.
+Let's assume that you have python files executable in your OS.  If you don't, add `python` before `hashit`.  You know what to do.
 
 ---
 
