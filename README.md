@@ -16,7 +16,7 @@ Let's assume that you have python files executable in your OS and you've updated
 
 ### Make sure you're not missing photos
 
-c:\pictures> `hashit store pictures`
+c:\pictures> `hashit store pictures --recursive`
 
 e:\pictures> `hashit check pictures --diff --recursive --listonly > files_not_on_c.txt`
 
@@ -52,20 +52,20 @@ c:\necessary_files> `hashit check backup --recursive --diff`
 : clear out the contents of a collection and remove its file
 
 ---
+ 
+### Optional:
 
-###Optional:
-
---diff
+**--diff**
 : only show files that do not exist in the collection
 
---recursive
+**--recursive**
 : recurse through subdirectories
 
---listonly
+**--listonly**
 : only outputs the filenames, useful in piping the output to a file.
 
---rename
+**--rename**
 : renames the files in the current directory to "duplicate__<filename>".  This helps when reviewing old backup drives to quickly find non-duplicates in a directory by sorting in your OS's explorer/finder. 
 
---unrename
+**--unrename**
 : removes the "duplicate__" from the front of files which exist in the collection.  Useful for both regret and temporarily weeding out non duplicates and then renaming them back.  
