@@ -17,7 +17,8 @@ options = {
     "diff" : False,
     "unrename" : False,
     "flush" : False,
-    "recursive" : False
+    "recursive" : False,
+    "delete" : False
 }
 
 numberErrors = 0
