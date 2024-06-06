@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--unrename", help="Add this to fix all filenames if renamed by accident.", default = False, action="store_true")
     parser.add_argument("--flush", help="Delete the collection", default = False, action="store_true")
     parser.add_argument("--listonly", help="Only list the files in the collection", default = False, action="store_true")
+    parser.add_argument("--delete", help="Delete the file if a duplicate is found.", default = False, action="store_true") 
 
     args = parser.parse_args()
 
@@ -43,6 +44,7 @@ def main():
     options["unrename"] = args.unrename
     options["flush"] = args.flush
     options["listonly"] = args.listonly
+    options["delete"] = args.delete
 
 
     # speclialized actions 
@@ -228,6 +230,11 @@ def check_hashes(collection,args):
 
                     if not options["diff"]:
                         print("✅ (Found in collection) ", end="")
+
+                    if options["delete"]:
+                        print(" (Deleting file...)", end="")
+                        os.remove(full_path)
+                        print("✅ (File deleted)", end="")
 
                     if args.rename and not args.rename == "False":
 
