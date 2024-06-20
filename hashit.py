@@ -18,7 +18,8 @@ options = {
     "unrename" : False,
     "flush" : False,
     "recursive" : False,
-    "delete" : False
+    "delete" : False,
+    "move" : False,
 }
 
 numberErrors = 0
@@ -31,6 +32,7 @@ def main():
     parser.add_argument("--recursive", help="Recursively check for duplicates in the child directories as well as this one.", default = False, action="store_true")
     parser.add_argument("--directory", help="The directory to check for duplicates in.", default=os.getcwd(), type=str)
     parser.add_argument("--rename", help="Rename the file if a duplicate is found.", default = False, action="store_true")
+    parser.add_argument("--move", help="Move the file to duplicates subdirectory if found in collection.", default = False, action="store_true")
     parser.add_argument("--diff", help="Only return files not in the collection", default = False, action="store_true")
     parser.add_argument("--unrename", help="Add this to fix all filenames if renamed by accident.", default = False, action="store_true")
     parser.add_argument("--flush", help="Delete the collection", default = False, action="store_true")
@@ -41,6 +43,7 @@ def main():
 
     options["recursive"] = args.recursive
     options["rename"] = args.rename
+    options["move"] = args.move
     options["diff"] = args.diff
     options["unrename"] = args.unrename
     options["flush"] = args.flush
@@ -249,6 +252,17 @@ def check_hashes(collection,args):
                         new_filename = "duplicate__" + filename 
                         os.rename(filename, new_filename)
                         print(f"File renamed to {new_filename}", end="")
+
+                    if args.move and not args.move == "False":
+                        # create a duplicates directory if it doesn't exist
+                        duplicates_dir = os.path.join(args.directory, "duplicates")
+                        if not os.path.exists(duplicates_dir):
+                            os.makedirs(duplicates_dir)
+
+                        # move the file to the duplicates directory
+                        new_path = os.path.join(duplicates_dir, filename)
+                        os.rename(full_path, new_path)
+                        print(f" (Moved to {new_path})", end="")
                 else:
                     if args.diff:
                         print(f"{rel_path} ", end="")
