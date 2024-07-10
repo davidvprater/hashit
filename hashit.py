@@ -2,7 +2,6 @@ import hashlib
 import os
 import sqlite3
 import argparse
-import os
 
 python_path = os.environ.get("PYTHON_PATH")
 if python_path:
@@ -24,10 +23,11 @@ options = {
 
 numberErrors = 0
 
+
 def main():
 
     parser = argparse.ArgumentParser(description="Check for duplicate files in a directory.")
-    parser.add_argument("action", choices=["store","check","list", "flush"], help="The action to perform. Options: 'store', 'check', 'list', 'flush'.", default="store")
+    parser.add_argument("action", choices=["store","check","list","flush", "moveduplicates"], help="The action to perform. Options: 'store', 'check', 'list', 'flush', 'moveduplicates'.  The moveduplicates action does not require or use a collection.", default="store")
     parser.add_argument("collection", help="The collection to store the hashes in.", default="hashes")
     parser.add_argument("--recursive", help="Recursively check for duplicates in the child directories as well as this one.", default = False, action="store_true")
     parser.add_argument("--directory", help="The directory to check for duplicates in.", default=os.getcwd(), type=str)
@@ -38,6 +38,10 @@ def main():
     parser.add_argument("--flush", help="Delete the collection", default = False, action="store_true")
     parser.add_argument("--listonly", help="Only list the files in the collection", default = False, action="store_true")
     parser.add_argument("--delete", help="Delete the file if a duplicate is found.", default = False, action="store_true") 
+    parser.add_argument("--verbose", help="Print more information.", default = False, action="store_true")
+    parser.add_argument("--remove", help="Remove a file's hash from a collection (used with store)", default = False, action="store_true")
+
+
 
     args = parser.parse_args()
 
@@ -49,7 +53,28 @@ def main():
     options["flush"] = args.flush
     options["listonly"] = args.listonly
     options["delete"] = args.delete
+    options["verbose"] = args.verbose
+    options["remove"] = args.remove
 
+    # moveduplicates action
+    if args.action == "moveduplicates":
+        # just use a temporary list, not a collection
+        dupehashes = []
+        duplicate_directory = "duplicates"
+        directory = os.getcwd()
+        for filename in os.listdir(directory):
+            if not os.path.isdir(os.path.join(directory, filename)):
+                hash = sha1(filename)
+                if hash not in dupehashes:
+                    dupehashes.push(hash)
+                else:
+                    if not os.path.exists(hashes_directory):
+                        os.makedirs(hashes_directory)
+                        full_path = os.path.join(directory, filename)
+                        new_path = os.path.join(directory,duplicate_directory)
+                        os.rename(full_path, new_path)
+                        print(f" (Moved to {new_path})", end="", flush=True)
+        exit(0)
 
     # speclialized actions 
     if options["unrename"]:
@@ -74,6 +99,22 @@ def main():
         list_hashes(args.collection)
     else:
         print(f"Invalid action: {args.action}")
+
+def print_legend():
+    print("┌───────────────────────────────────────────┐")
+    print("│              Legend:                      │")
+    print("│                                           │")
+    print("│   ✅ - File found in collection           │")
+    print("│   ❌ - File not found in collection       │")
+    print("│   🗑️ - File deleted                       │")
+    print("│   📂 - File moved to duplicates directory │")
+    print("│   😉 - Same path as added to collection   │")
+    print("│   🔄 - File already renamed               │")
+    print("│   ©️ - File renamed                       │")
+    print("│   🚫 - File removed from collection       │")
+    print("│                                           │")
+    print("└───────────────────────────────────────────┘")
+    
 
 def unrename_files(directory):
     for filename in os.listdir(directory):
@@ -103,8 +144,10 @@ def get_connection(collection):
     return sqlite3.connect(database_path)
 
 def store_file_hash(filename, collection):
+    global options
 
-    print(f"Storing hash for file: {filename}...", end="")
+    if options["verbose"]:
+        print(f"Storing hash for file: {filename}...", end="", flush=True)
 
     conn = get_connection(collection)
     c = conn.cursor()
@@ -112,7 +155,8 @@ def store_file_hash(filename, collection):
     # if the filename already exists in the database, skip it
     c.execute('''SELECT filename FROM file_hashes WHERE filename = ?''', (filename,))
     if c.fetchone():
-        print(" (Already exists in collection)")
+        if options["verbose"]:
+            print(" (Already exists in collection)")
         return False
     
     # Generate the hash for the file
@@ -122,15 +166,46 @@ def store_file_hash(filename, collection):
         print("❌ getting hash failed!")
         return False
 
-    # Insert or update the hash in the database
-    c.execute('''INSERT OR REPLACE INTO file_hashes (filename, hash)
-                 VALUES (?, ?)''', (filename, hash))
+    # Insert, update, or delete the hash in the database
+
+    c.execute('''INSERT OR REPLACE INTO file_hashes (filename, hash) VALUES (?, ?)''', (filename, hash))
     
     if c.rowcount == 1:
-        print("✅")
+        print("✅", end="", flush=True)
     else:
-        print("❌ storing hash failed!")
+        print("❌", end="", flush=True)
+        if options["verbose"]: print(" storing hash failed!")
 
+    # Commit the changes and close the connection
+    conn.commit()
+    conn.close()
+
+    return True
+
+def remove_file_hash(filename, collection):
+    global options
+
+    if options["verbose"]:
+        print(f"Removing hash for file: {filename}...", end="", flush=True)
+
+    conn = get_connection(collection)
+    c = conn.cursor()
+
+    # if the filename doesn't exist in the database, skip it
+    c.execute('''SELECT filename FROM file_hashes WHERE filename = ?''', (filename,))
+    if not c.fetchone():
+        if options["verbose"]:
+            print(" (Not found in collection)")
+        return False
+
+    # Delete the hash from the database
+    c.execute('''DELETE FROM file_hashes WHERE filename = ?''', (filename,))
+    
+    if c.rowcount == 1:
+        print("🚫", end="", flush=True)
+    else:
+        print("❌", end="", flush=True)
+        if options["verbose"]: print(" removing hash failed!")
 
     # Commit the changes and close the connection
     conn.commit()
@@ -140,19 +215,19 @@ def store_file_hash(filename, collection):
 
 
 def store_hashes(directory, collection):
-    print(f"Storing hashes for files in directory: {directory} into collection {collection}...")
+    global options
+
+    if options["verbose"]:
+        print(f"Storing hashes for files in directory: {directory} into collection {collection}...")
+
     conn = get_connection(collection)
     c = conn.cursor()
-
 
     # Create table for storing hashes if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS file_hashes
                  (filename TEXT, hash TEXT, PRIMARY KEY (filename))''')
 
     # Generate and store hashes
-
-    global options
-
     if options["recursive"]:
         for dirpath, dirnames, filenames in os.walk(directory):
             for filename in filenames:
@@ -204,14 +279,17 @@ def list_hashes(collection):
     for filename, hash in hashes:
         print(f"{filename} - {hash}")
 
-
-    print("End of list.")
+    if options["verbose"]:
+        print("End of list.")
 
 def check_hashes(collection,args):
     conn = get_connection(collection)
     c = conn.cursor()
 
     global options
+
+    if not options["verbose"]:
+        print_legend()
 
     # get all files in the directory
     for dirpath, dirnames, filenames in os.walk(args.directory):
@@ -223,35 +301,66 @@ def check_hashes(collection,args):
 
                 if not options["diff"]:
                     if options["recursive"]:
-                        print(f"Checking {rel_path} ...", end="")
+                        if options["verbose"]: print(f"Checking {rel_path} ...", end="", flush=True)
                     else:
-                        print(f"Checking {filename} ...", end="")
+                        if options["verbose"]: print(f"Checking {filename} ...", end="", flush=True)
 
+                pfe = passed_file_hash_exists(full_path, collection)
 
-                if passed_file_hash_exists(full_path, collection):
+                if pfe:
+
+                    if pfe == "SAMEFILE":
+                        if options["verbose"]:
+                            print(" (😉 - Same file as hashed) ")
+
+                        if options["remove"]:
+                            remove_file_hash(full_path, collection)
+
+                        continue
+
                     if options["diff"]:
                         continue
 
-                    if not options["diff"]:
-                        print("✅ (Found in collection) ", end="")
+                    if options["verbose"]:
+                        print(" (Found in collection) ", end="", flush=True)
+                    else:
+                        print("✅", end="", flush=True)
+
+                    if options["remove"]:
+                        remove_file_hash(full_path, collection)
+                        continue
 
                     if options["delete"]:
-                        print(" (Deleting file...)", end="")
+                        
+                        if options["verbose"]:
+                            print(" (Deleting file...)", end="", flush=True)
+
                         os.remove(full_path)
-                        print("✅ (File deleted)", end="")
+
+                        if options["verbose"]:
+                            print("✅ (File deleted)", end="", flush=True)
+                        else: 
+                            print("🗑️", end="", flush=True)
 
                     if args.rename and not args.rename == "False":
 
                         # if the filename already starts with "duplicate__", skip it
                         if filename.startswith("duplicate__"):
-                            print(" (Already renamed)")
+                            if options["verbose"]:
+                                print(" (Already renamed)")
+                            else:
+                                print("🔄", end="", flush=True)
                             continue
 
                         print("Renaming file...")
                         # rename the file
                         new_filename = "duplicate__" + filename 
                         os.rename(filename, new_filename)
-                        print(f"File renamed to {new_filename}", end="")
+
+                        if options["verbose"]:
+                            print(f"File renamed to {new_filename}", end="", flush=True)
+                        else:
+                            print("©️", end="", flush=True)
 
                     if args.move and not args.move == "False":
                         # create a duplicates directory if it doesn't exist
@@ -262,15 +371,23 @@ def check_hashes(collection,args):
                         # move the file to the duplicates directory
                         new_path = os.path.join(duplicates_dir, filename)
                         os.rename(full_path, new_path)
-                        print(f" (Moved to {new_path})", end="")
+                        if options["verbose"]:
+                            print(f" (Moved to {new_path})", end="", flush=True)
+                        else:
+                            print("📂", end="", flush=True)
                 else:
                     if args.diff:
-                        print(f"{rel_path} ", end="")
+                        print(f"{rel_path} ", end="", flush=True)
 
                     if not options["listonly"]:
-                        print("❌ (No duplicate found in collection)", end="")
+                        if options["verbose"]:
+                            print("❌ (Not found in collection) ", end="", flush=True)
+                        else:
+                            print("❌", end="", flush=True)
+                        
 
-            print("")
+            if options["verbose"]:
+                print("")
 
         if not options["recursive"]:
             break
@@ -311,9 +428,14 @@ def passed_file_hash_exists(file_path, collection):
 
     # if the filename is the same as the file_path, then it's the same file
     if hash and hash[0] == file_path:
-        print(" (😉 - Same file as hashed) ")
-        print(hash[0])
-        return None
+        if options["verbose"]:
+            print(" (😉 - Same file as hashed) ")
+        else:
+            print("😉", end="", flush=True)
+
+        if options["verbose"]:
+            print(hash[0])
+        return "SAMEFILE"
     
     if hash:
         # return the just the filename is if the hash is not None
